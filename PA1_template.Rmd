@@ -188,7 +188,7 @@ meanIntervalWeekendDay <- tapply(
      )
 
 # Plot the time series of the average number of steps taken in week days and weekend days in a panel.
-par(mfrow = c(1, 2))
+par(mfrow = c(2, 1))
 plot(
      x = names(meanIntervalWeekday),
      y = meanIntervalWeekday,
