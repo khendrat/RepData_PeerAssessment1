@@ -1,25 +1,204 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Week 2"
+author: "Kenneth Hendrata"
+date: "August 11, 2017"
+output: html_document
 ---
 
+#Introduction
+It is now possible to collect a large amount of data about personal movement using activity monitoring devices such as a Fitbit, Nike Fuelband, or Jawbone Up. These type of devices are part of the "quantified self" movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. But these data remain under-utilized both because the raw data are hard to obtain and there is a lack of statistical methods and software for processing and interpreting the data.
 
-## Loading and preprocessing the data
+This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
 
+The data for this assignment can be downloaded from the course web site:
 
+* Dataset: [Activity monitoring data](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip) [52K]
 
-## What is mean total number of steps taken per day?
+The variables included in this dataset are:
 
+* __steps:__ Number of steps taking in a 5-minute interval (missing values are coded as __NA__)
+* __date:__ The date on which the measurement was taken in YYYY-MM-DD format
+* __interval:__ Identifier for the 5-minute interval in which measurement was taken
 
+The dataset is stored in a comma-separated-value (CSV) file and there are a total of 17,568 observations in this dataset.
 
-## What is the average daily activity pattern?
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
+## Load packages
 
+Load xtable package.
 
-## Imputing missing values
+```{r loadPackages, results='hide'}
+library(xtable)
+```
 
+## Load data
 
+1. We first load the data to a data frame _activityDF_, remove the missing values (NAs), and reshape the data frame for further calculations, plots, and tables.
 
-## Are there differences in activity patterns between weekdays and weekends?
+```{r loadData}
+#Load the data.
+activityDF <- read.csv("activity.csv")
+
+# Remove missing values from the data frame.
+activityDFNoNA <- activityDF[!is.na(activityDF$steps), ]
+
+# Calculate the sum of steps for each date and the mean and median of those sums.
+stepsSumDF <- tapply(activityDFNoNA$steps, activityDFNoNA$date, sum) # Calculate the sum of steps for each date.
+stepsMeanDF <- tapply(activityDFNoNA$steps, activityDFNoNA$date, mean) # Calculate the mean of steps for each date.
+stepsMedianDF <- tapply(activityDFNoNA$steps, activityDFNoNA$date, median) # Calculate the median of steps for each date.
+
+# Tabulate the sum, mean, and median of steps for each date.
+stepsDF <- data.frame(stepsSumDF, stepsMeanDF, stepsMedianDF)
+names(stepsDF) <- c("steps.sum", "steps.mean", "steps.median")
+
+# Calculate the mean and median of steps for each date.
+meanSteps <- mean(stepsDF$steps.sum, na.rm = T)
+medianSteps <- median(stepsDF$steps.sum, na.rm = T)
+```
+
+2. This is a histogram of the total number of steps taken each day with lines denoting the mean and median number of steps (which happen to line up on top of each other in this plot).
+
+```{r hist}
+# Plot the histogram.
+hist(
+     stepsDF$steps.sum,
+     main = "Histogram of the Sum of Steps per Day",
+     xlab = "Sum of Steps per Day"
+)
+
+#Add mean and median lines and text.
+abline(v = meanSteps, col = "blue", lwd = 2)
+abline(v = medianSteps, col = "blue", lwd = 2)
+text(11000, 22, paste("mean = ", round(meanSteps, 1), "\nmedian = ", medianSteps), pos = 4)
+```
+
+3. This is the mean and median number of steps taken each day.
+
+```{r meanMedianSteps, results='asis'}
+print(xtable(stepsDF), type = "html")
+```
+
+4. This is a time series plot of the average number of steps taken.
+
+```{r meanStepsPlot}
+# Calculate the mean number of steps per interval.
+meanInterval <- tapply(activityDFNoNA$steps, activityDFNoNA$interval, mean)
+
+# Plot the time series of the average number of steps taken.
+plot(
+     x = names(meanInterval),
+     y = meanInterval,
+     type = "l",
+     main = "Time Series of the Average Number of Steps per Interval",
+     xlab = "Interval",
+     ylab = "Number of steps"
+     )
+```
+
+5. We find the 5-minute interval that, on average, contains the maximum number of steps.
+
+```{r maxInterval}
+# Calculate the average number of steps for each interval and find the 5-minute interval that, on average, contains the maximum number of steps.
+names(which.max(meanInterval))
+```
+
+## Imputing Missing Values
+
+6. Our imputing strategy is to replace missing values with the mean number of steps for the associated 5-minute interval.
+
+```{r missingValues}
+# Calculate the total number of missing values in the dataset (i.e. the total number of rows with NAs).
+nrow(activityDF[is.na(activityDF$steps), ])
+
+# Create a new dataset that is equal to the original dataset but with the missing data filled in.
+activityDFImputed <- data.frame(activityDF$date, activityDF$interval)
+names(activityDFImputed) <- c("date", "interval")
+for(i in 1:nrow(activityDF))
+     {
+     if(is.na(activityDF$steps[i]))
+          activityDFImputed$steps[i] <- meanInterval[as.character(activityDF$interval[i])]
+     else
+          activityDFImputed$steps[i] <- activityDF$steps[i]
+}
+
+# Calculate the new sum of steps for each date and the mean and median of those sums.
+stepsSumDF <- tapply(activityDFImputed$steps, activityDFImputed$date, sum) # Calculate the sum of steps for each date.
+stepsMeanDF <- tapply(activityDFImputed$steps, activityDFImputed$date, mean) # Calculate the mean of steps for each date.
+stepsMedianDF <- tapply(activityDFImputed$steps, activityDFImputed$date, median) # Calculate the median of steps for each date.
+
+# Tabulate the sum, mean, and median of steps for each date.
+stepsImputedDF <- data.frame(stepsSumDF, stepsMeanDF, stepsMedianDF)
+names(stepsImputedDF) <- c("steps.sum", "steps.mean", "steps.median")
+```
+
+7. As we can see when we compare the new and old histograms of the total number of steps taken each day, the impact of imputing missing data increases the frequency of days with steps.
+
+```{r newHist}
+# Plot the new and old histograms.
+par(mfrow = c(1, 2))
+hist(
+     stepsSumDF,
+     main = "New histogram",
+     xlab = "Sum of Steps per Day"
+)
+hist(
+     stepsDF$steps.sum,
+     main = "Old histogram",
+     xlab = "Sum of Steps per Day"
+)
+```
+
+As we can see, the new mean and median number of steps taken each day have also increased (compared to the table in Step 3).
+
+```{r meanMedianStepsImputed, results='asis'}
+print(xtable(stepsImputedDF), type = "html")
+```
+
+8. Finally, through panel plots comparing the average number of steps taken per 5-minute interval across weekdays and weekend days, we see that people generally take more steps in the weekends and those steps are more distributed throughout the day.
+
+```{r weekdayOrWeekend}
+# Create a new variable in the dataset with two levels ??? ???Week day??? and ???Weekend day??? indicating whether a given date is a weekday or weekend day.
+for(i in 1:nrow(activityDFImputed))
+     {
+     if(weekdays(as.Date(activityDFImputed$date[i])) %in% c("Saturday", "Sunday"))
+          activityDFImputed$weekday[i] <- "Weekend day"
+     else
+          activityDFImputed$weekday[i] <- "Week day"
+}
+
+# Calculate the mean number of steps per interval for the imputed data set for week days.
+meanIntervalWeekday <- tapply(
+     activityDFImputed[activityDFImputed$weekday == "Week day", ]$steps,
+     activityDFImputed[activityDFImputed$weekday == "Week day", ]$interval,
+     mean
+     )
+
+# Calculate the mean number of steps per interval for the imputed data set for weekend days.
+meanIntervalWeekendDay <- tapply(
+     activityDFImputed[activityDFImputed$weekday == "Weekend day", ]$steps,
+     activityDFImputed[activityDFImputed$weekday == "Weekend day", ]$interval,
+     mean
+     )
+
+# Plot the time series of the average number of steps taken in week days and weekend days in a panel.
+par(mfrow = c(1, 2))
+plot(
+     x = names(meanIntervalWeekday),
+     y = meanIntervalWeekday,
+     type = "l",
+     main = "Average Steps in Week Days",
+     xlab = "Interval",
+     ylab = "Number of steps"
+     )
+plot(
+     x = names(meanIntervalWeekendDay),
+     y = meanIntervalWeekendDay,
+     type = "l",
+     main = "Average Steps in Weekend Days",
+     xlab = "Interval",
+     ylab = "Number of steps"
+     )
+```
