@@ -26,7 +26,7 @@ The dataset is stored in a comma-separated-value (CSV) file and there are a tota
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Load packages
+#Load packages
 
 Load xtable package.
 
@@ -34,7 +34,7 @@ Load xtable package.
 library(xtable)
 ```
 
-## Load data
+#Load data
 
 1. We first load the data to a data frame _activityDF_, remove the missing values (NAs), and reshape the data frame for further calculations, plots, and tables.
 
@@ -58,6 +58,8 @@ names(stepsDF) <- c("steps.sum", "steps.mean", "steps.median")
 meanSteps <- mean(stepsDF$steps.sum, na.rm = T)
 medianSteps <- median(stepsDF$steps.sum, na.rm = T)
 ```
+
+#Conduct initial data exploration
 
 2. This is a histogram of the total number of steps taken each day with lines denoting the mean and median number of steps (which happen to line up on top of each other in this plot).
 
@@ -105,7 +107,7 @@ plot(
 names(which.max(meanInterval))
 ```
 
-## Imputing Missing Values
+#Impute Missing Values
 
 6. Our imputing strategy is to replace missing values with the mean number of steps for the associated 5-minute interval.
 
@@ -157,10 +159,12 @@ As we can see, the new mean and median number of steps taken each day have also 
 print(xtable(stepsImputedDF), type = "html")
 ```
 
+#Look into differences between in activity patterns between week days and weekend days
+
 8. Finally, through panel plots comparing the average number of steps taken per 5-minute interval across weekdays and weekend days, we see that people generally take more steps in the weekends and those steps are more distributed throughout the day.
 
 ```{r weekdayOrWeekend}
-# Create a new variable in the dataset with two levels ??? ???Week day??? and ???Weekend day??? indicating whether a given date is a weekday or weekend day.
+# Create a new variable in the dataset with two levels – “Week day” and “Weekend day” indicating whether a given date is a weekday or weekend day.
 for(i in 1:nrow(activityDFImputed))
      {
      if(weekdays(as.Date(activityDFImputed$date[i])) %in% c("Saturday", "Sunday"))
@@ -202,3 +206,7 @@ plot(
      ylab = "Number of steps"
      )
 ```
+
+#Thank you!
+
+Thanks for reading this! I hope this has been useful for you!
